@@ -30,7 +30,7 @@ const ServiceScreen = ({ navigation }) => {
     isAuth,
     token,
     setIsLoading,
-    getAllServices
+    getAllServices,
   } = useContext(StoreContext);
 
   // --- State ---
@@ -58,11 +58,11 @@ const ServiceScreen = ({ navigation }) => {
           text1: "Error loading services",
           text2: "Check your internet connection.",
         });
-      } finally{
-        setIsLoading(false)
+      } finally {
+        setIsLoading(false);
       }
     }
-    
+
     loadServices(); //load services
 
     if (services && services.length > 0) {
@@ -108,15 +108,12 @@ const ServiceScreen = ({ navigation }) => {
     setLocalIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/services/pay`, {
-        method: "GET",
+        method: "POST", //POST
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, //your token
         },
-        body: JSON.stringify({
-          serviceId: parseInt(serviceId),
-          currency: wallet,
-        }),
+        body: JSON.stringify({ wallet, serviceId }), // Send serviceId in body
       });
 
       const data = await response.json();
@@ -157,7 +154,7 @@ const ServiceScreen = ({ navigation }) => {
     if (!selectedService) return; // Should not happen if button is visible, but good practice
 
     // Balance Check
-     
+
     const serviceAmount = Number(
       wallet === "ngn" ? selectedService.amount : selectedService.usdPrice
     );
@@ -224,7 +221,6 @@ const ServiceScreen = ({ navigation }) => {
       <Text style={tw`text-xl font-bold text-gray-800`}>{item.name}</Text>
       <Text style={tw`text-gray-600 my-2`}>{item.description}</Text>
       <Text style={tw`text-lg font-semibold text-purple-600 mb-3`}>
-        
         {wallet === "ngn"
           ? `₦${Number(item.amount).toLocaleString()} NGN`
           : `$${Number(item.usdPrice).toLocaleString()} USD`}
@@ -244,129 +240,125 @@ const ServiceScreen = ({ navigation }) => {
       style={tw`flex-1 bg-gray-100 mb-14`}
       contentContainerStyle={tw`flex-grow py-6`} // Add padding top/bottom
     >
-      {
-        !hideServicesList ? (
-          // --- Services List View ---
-          <View style={tw`bg-gray-100 mb-14 mt-4`}>
-            <Text
-              style={tw`text-2xl font-bold text-center text-gray-800 mb-2 px-4`}
-            >
-              Available Services
-            </Text>
-            <Text style={tw`text-base text-gray-500 text-center mb-6 px-4`}>
-              Select a service to pay from your wallet.
-            </Text>
-            <FlatList
-              data={sortedServices}
-              renderItem={renderServiceItem}
-              keyExtractor={(item) => item.id.toString()}
-              ListEmptyComponent={
-                <View style={tw`flex-1 justify-center items-center mt-10`}>
-                  <Text style={tw`text-gray-500`}>No services found.</Text>
-                </View>
-              }
-            />
-          </View>
-        ) : selectedService ? (
-          <View
-            style={tw`p-6 bg-white rounded-xl shadow-lg m-4 border border-gray-200`}
+      {!hideServicesList ? (
+        // --- Services List View ---
+        <View style={tw`bg-gray-100 mb-14 mt-4`}>
+          <Text
+            style={tw`text-2xl font-bold text-center text-gray-800 mb-2 px-4`}
           >
-            <Text style={tw`text-2xl font-bold text-center text-gray-800 mb-4`}>
-              Confirm Payment
-            </Text>
-            <Text style={tw`text-lg text-center text-gray-700 mb-2`}>
-              You are about to pay for:
-            </Text>
-            <Text
-              style={tw`text-xl font-semibold text-center text-purple-700 mb-5`}
-            >
-              {selectedService.name}
-            </Text>
-
-            <View style={tw`border-t border-b border-gray-200 py-4 my-4`}>
-              <View style={tw`flex-row justify-between items-center mb-2 px-2`}>
-                <Text style={tw`text-base text-gray-600`}>Service Cost:</Text>
-                <Text style={tw`text-base font-semibold text-gray-800`}>
-                  {wallet === "ngn"
-                    ? `₦${Number(selectedService.amount).toLocaleString()} NGN`
-                    : `$${Number(
-                        selectedService.usdPrice
-                      ).toLocaleString()} USD`}
-                </Text>
+            Available Services
+          </Text>
+          <Text style={tw`text-base text-gray-500 text-center mb-6 px-4`}>
+            Select a service to pay from your wallet.
+          </Text>
+          <FlatList
+            data={sortedServices}
+            renderItem={renderServiceItem}
+            keyExtractor={(item) => item.id.toString()}
+            ListEmptyComponent={
+              <View style={tw`flex-1 justify-center items-center mt-10`}>
+                <Text style={tw`text-gray-500`}>No services found.</Text>
               </View>
-              <View style={tw`flex-row justify-between items-center px-2`}>
-                <Text style={tw`text-base text-gray-600`}>Your Balance:</Text>
-                <Text
-                  style={tw`text-base font-semibold ${
-                    Number(walletBalance) <
-                    Number(
-                      wallet === "ngn"
-                        ? selectedService.amount
-                        : selectedService.usdPrice
-                    )
-                      ? "text-red-600"
-                      : "text-green-600"
-                  }`}
-                >
-                  {wallet === "ngn" ? `₦` : `$`}
-                  {Number(walletBalance).toLocaleString()}
-                </Text>
-              </View>
-            </View>
+            }
+          />
+        </View>
+      ) : selectedService ? (
+        <View
+          style={tw`p-6 bg-white rounded-xl shadow-lg m-4 border border-gray-200`}
+        >
+          <Text style={tw`text-2xl font-bold text-center text-gray-800 mb-4`}>
+            Confirm Payment
+          </Text>
+          <Text style={tw`text-lg text-center text-gray-700 mb-2`}>
+            You are about to pay for:
+          </Text>
+          <Text
+            style={tw`text-xl font-semibold text-center text-purple-700 mb-5`}
+          >
+            {selectedService.name}
+          </Text>
 
-            {/* Conditional Warning for insufficient balance */}
-            {Number(walletBalance) <
-              Number(
-                wallet === "ngn"
-                  ? selectedService.amount
-                  : selectedService.usdPrice
-              ) && (
-              <Text style={tw`text-red-600 text-center text-sm mb-4`}>
-                Insufficient balance to purchase this service.
+          <View style={tw`border-t border-b border-gray-200 py-4 my-4`}>
+            <View style={tw`flex-row justify-between items-center mb-2 px-2`}>
+              <Text style={tw`text-base text-gray-600`}>Service Cost:</Text>
+              <Text style={tw`text-base font-semibold text-gray-800`}>
+                {wallet === "ngn"
+                  ? `₦${Number(selectedService.amount).toLocaleString()} NGN`
+                  : `$${Number(selectedService.usdPrice).toLocaleString()} USD`}
               </Text>
-            )}
-
-            {/* Pay Button */}
-            <TouchableOpacity
-              onPress={onSubmitPayment}
-              style={tw`w-full ${
-                localIsLoading ||
-                Number(walletBalance) <
+            </View>
+            <View style={tw`flex-row justify-between items-center px-2`}>
+              <Text style={tw`text-base text-gray-600`}>Your Balance:</Text>
+              <Text
+                style={tw`text-base font-semibold ${
+                  Number(walletBalance) <
                   Number(
                     wallet === "ngn"
                       ? selectedService.amount
                       : selectedService.usdPrice
                   )
-                  ? "bg-purple-600"
-                  : "bg-green-600" 
-              } rounded-xl px-6 py-3 flex-row justify-center items-center shadow-md mb-3`}
-              disabled={localIsLoading} 
-            >
-              {localIsLoading ? (
-                <ActivityIndicator
-                  size="small"
-                  color="#ffffff"
-                  style={tw`mr-2`}
-                />
-              ) : null}
-              <Text style={tw`text-white text-center text-lg font-bold`}>
-                {localIsLoading ? "Processing..." : "Pay Now"}
+                    ? "text-red-600"
+                    : "text-green-600"
+                }`}
+              >
+                {wallet === "ngn" ? `₦` : `$`}
+                {Number(walletBalance).toLocaleString()}
               </Text>
-            </TouchableOpacity>
-
-            {/* Cancel Button */}
-            <TouchableOpacity
-              onPress={handleCancelSelection}
-              style={tw`w-full bg-gray-200 rounded-xl px-6 py-3 flex-row justify-center items-center`}
-              disabled={localIsLoading} 
-            >
-              <Text style={tw`text-gray-700 text-center text-lg font-bold`}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        ) : null 
-      }
+
+          {/* Conditional Warning for insufficient balance */}
+          {Number(walletBalance) <
+            Number(
+              wallet === "ngn"
+                ? selectedService.amount
+                : selectedService.usdPrice
+            ) && (
+            <Text style={tw`text-red-600 text-center text-sm mb-4`}>
+              Insufficient balance to purchase this service.
+            </Text>
+          )}
+
+          {/* Pay Button */}
+          <TouchableOpacity
+            onPress={onSubmitPayment}
+            style={tw`w-full ${
+              localIsLoading ||
+              Number(walletBalance) <
+                Number(
+                  wallet === "ngn"
+                    ? selectedService.amount
+                    : selectedService.usdPrice
+                )
+                ? "bg-purple-600"
+                : "bg-green-600"
+            } rounded-xl px-6 py-3 flex-row justify-center items-center shadow-md mb-3`}
+            disabled={localIsLoading}
+          >
+            {localIsLoading ? (
+              <ActivityIndicator
+                size="small"
+                color="#ffffff"
+                style={tw`mr-2`}
+              />
+            ) : null}
+            <Text style={tw`text-white text-center text-lg font-bold`}>
+              {localIsLoading ? "Processing..." : "Pay Now"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Cancel Button */}
+          <TouchableOpacity
+            onPress={handleCancelSelection}
+            style={tw`w-full bg-gray-200 rounded-xl px-6 py-3 flex-row justify-center items-center`}
+            disabled={localIsLoading}
+          >
+            <Text style={tw`text-gray-700 text-center text-lg font-bold`}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 };
